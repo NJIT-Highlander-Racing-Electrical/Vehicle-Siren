@@ -1,35 +1,18 @@
 /***************************************************
-DFPlayer - A Mini MP3 Player For Arduino
- <https://www.dfrobot.com/product-1121.html>
-
- ***************************************************
- This example shows the basic function of library for DFPlayer.
-
- Created 2016-12-07
- By [Angelo qiao](Angelo.qiao@dfrobot.com)
-
- GNU Lesser General Public License.
- See <http://www.gnu.org/licenses/> for details.
- All above must be included in any redistribution
- ****************************************************/
-
-/***********Notice and Trouble shooting***************
- 1.Connection and Diagram can be found here
- <https://www.dfrobot.com/wiki/index.php/DFPlayer_Mini_SKU:DFR0299#Connection_Diagram>
- 2.This code is tested on Arduino Uno, Leonardo, Mega boards.
+ *
+ *  Baja Vehicle Siren
+ *
+ *  Created by Alexander Huegler based on the
+ *  "GetStarted.cpp" example from the 
+ *  "DFRobotDFPlayerMini.h" library. 2026.
+ * 
  ****************************************************/
 
 #include "Arduino.h"
 #include "DFRobotDFPlayerMini.h"
 #include <HardwareSerial.h>
 
-#if (defined(ARDUINO_AVR_UNO) || defined(ESP8266)) // Using a soft serial port
-#include <SoftwareSerial.h>
-SoftwareSerial softSerial(/*rx =*/4, /*tx =*/5);
-#define FPSerial softSerial
-#else
 #define FPSerial Serial1
-#endif
 
 DFRobotDFPlayerMini myDFPlayer;
 void printDetail(uint8_t type, int value);
@@ -39,12 +22,15 @@ int buttonSkip = 25;
 int buttonBack = 26;
 int buttonPauseOrPlay = 27;
 
+// Button "time since program start at last press" variables
 unsigned long buttonSkip_Timer = millis();
 unsigned long buttonBack_Timer = millis();
 unsigned long buttonPauseOrPlay_Timer = millis();
 
+// Status variables
 bool playerIsPaused = false;
 
+// Function declarations
 void checkPlayerButtons();
 
 void setup()
@@ -55,16 +41,17 @@ void setup()
   pinMode(buttonBack, INPUT_PULLUP);
   pinMode(buttonPauseOrPlay, INPUT_PULLUP);
 
-#if (defined ESP32)
-  FPSerial.begin(9600, SERIAL_8N1, /*rx =*/16, /*tx =*/17);
-#else
-  FPSerial.begin(9600);
-#endif
+  // Initialize serial connection to DFPlayer
+  int rx_pin = 16;
+  int tx_pin = 17;
+  FPSerial.begin(9600, SERIAL_8N1, rx_pin, tx_pin);
 
+  // Initialize serial
   Serial.begin(115200);
 
+  // Startup messages
   Serial.println();
-  Serial.println(F("Baja Vehicle Siren"));
+  Serial.println(F("Starting Baja Vehicle Siren, pass the aux."));
   Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
 
   if (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true))
@@ -85,22 +72,12 @@ void setup()
 
 void loop()
 {
-  static unsigned long timer = millis();
 
-  /* if (millis() - timer > 3000) {
-    timer = millis();
-    myDFPlayer.next();  //Play next mp3 every 3 second.
-  } */
-
-  /* if (myDFPlayer.available())
-  {
-    printDetail(myDFPlayer.readType(), myDFPlayer.read()); // Print the detail message from DFPlayer to handle different errors and states.
-  } */
-
+  // Check if buttons have been pressed and
   checkPlayerButtons();
-
 }
 
+// Function for printing error/status messages from the DFPlayer
 void printDetail(uint8_t type, int value)
 {
   switch (type)
@@ -165,6 +142,8 @@ void printDetail(uint8_t type, int value)
   }
 }
 
+
+// Function for checking if buttons have been pressed and performing the required actions
 void checkPlayerButtons()
 {
   bool buttonSkip_Pressed = false;
@@ -181,7 +160,8 @@ void checkPlayerButtons()
 
   // Skip button logic
   timerCurrent = millis();
-  if (buttonSkip_Pressed && ((timerCurrent - buttonSkip_Timer) > timerThreshold)) {
+  if (buttonSkip_Pressed && ((timerCurrent - buttonSkip_Timer) > timerThreshold))
+  {
     myDFPlayer.next();
     Serial.println("Skipping the current song.");
     buttonSkip_Timer = millis();
@@ -189,7 +169,8 @@ void checkPlayerButtons()
 
   // Back button logic
   timerCurrent = millis();
-  if (buttonBack_Pressed && ((timerCurrent - buttonBack_Timer) > timerThreshold)) {
+  if (buttonBack_Pressed && ((timerCurrent - buttonBack_Timer) > timerThreshold))
+  {
     myDFPlayer.previous();
     Serial.println("Playing the previous song.");
     buttonBack_Timer = millis();
@@ -197,12 +178,16 @@ void checkPlayerButtons()
 
   // Pause/Play button logic
   timerCurrent = millis();
-  if (buttonPauseOrPlay_Pressed && ((timerCurrent - buttonPauseOrPlay_Timer) > timerThreshold)) {
-    if (!playerIsPaused) {
+  if (buttonPauseOrPlay_Pressed && ((timerCurrent - buttonPauseOrPlay_Timer) > timerThreshold))
+  {
+    if (!playerIsPaused)
+    {
       myDFPlayer.pause();
       playerIsPaused = true;
       Serial.println("Pausing playback.");
-    } else if (playerIsPaused) {
+    }
+    else if (playerIsPaused)
+    {
       myDFPlayer.start();
       playerIsPaused = false;
       Serial.println("Unpausing playback.");
